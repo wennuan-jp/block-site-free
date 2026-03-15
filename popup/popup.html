@@ -105,7 +105,10 @@
 </head>
 <body>
     <div class="container">
-        <h2>Block this site?</h2>
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <h2 style="margin: 0;">Block this site?</h2>
+            <button id="optionsBtn" style="flex: none; background: transparent; border: none; font-size: 1.2rem; padding: 0.2rem; opacity: 0.6; cursor: pointer;">⚙️</button>
+        </header>
         <div class="site-info">
             <div class="url-label">Current Domain</div>
             <div id="currentUrl" class="url-value">Detecting...</div>

@@ -3,6 +3,9 @@
 const currentUrlElement = document.getElementById('currentUrl');
 const blockBtn = document.getElementById('blockBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const optionsBtn = document.getElementById('optionsBtn');
+
+optionsBtn.onclick = () => chrome.runtime.openOptionsPage();
 
 let currentHost = '';
 

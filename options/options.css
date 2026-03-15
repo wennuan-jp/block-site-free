@@ -165,6 +165,34 @@ footer {
     color: var(--text-secondary);
 }
 
+/* White List Styles */
+.white-list-input h2 {
+    color: #10b981; /* Greenish for positivity */
+}
+
+button#addWhiteBtn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.1s ease;
+}
+
+button#addWhiteBtn:hover {
+    filter: brightness(1.1);
+}
+
+button#addWhiteBtn:active {
+    transform: scale(0.98);
+}
+
+#whiteListInput:focus {
+    border-color: #10b981;
+}
+
 @keyframes fadeInDown {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }

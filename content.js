@@ -1,20 +1,45 @@
 // content.js
 // Immediate check for blocked sites using a simple "contains" logic
 
+/**
+ * Normalizes a URL/pattern by removing protocol, query parameters, fragments, and trailing slashes.
+ */
+function normalizePattern(url) {
+    if (!url) return '';
+    let normalized = url.replace(/^(http|https):\/\//, '');
+    normalized = normalized.split(/[?#]/)[0];
+    normalized = normalized.replace(/\/+$/, '');
+    return normalized;
+}
+
 function checkAndBlock() {
     const currentUrl = window.location.href.toLowerCase();
+    const currentUrlNormalized = normalizePattern(currentUrl);
     
-    chrome.storage.local.get(['blockedPatterns'], (result) => {
-        const patterns = result.blockedPatterns || [];
+    chrome.storage.local.get(['blockedPatterns', 'whiteList'], (result) => {
+        const blockedPatterns = result.blockedPatterns || [];
+        const whiteList = result.whiteList || [];
         
-        const isBlocked = patterns.some(pattern => {
+        // 1. Check if current URL matches any blocked pattern
+        const isBlocked = blockedPatterns.some(pattern => {
             const cleanPattern = pattern.toLowerCase().trim();
             return cleanPattern && currentUrl.includes(cleanPattern);
         });
 
         if (isBlocked) {
-            console.log('ZenBlock: Redirecting barred site:', currentUrl);
-            window.location.href = chrome.runtime.getURL('blocked.html');
+            // 2. Check if the normalized URL is in the white list
+            // Using "contains" logic for the normalized URL against whitelist items
+            const isWhitelisted = whiteList.some(whiteItem => {
+                const cleanWhite = normalizePattern(whiteItem.toLowerCase().trim());
+                return cleanWhite && currentUrlNormalized.includes(cleanWhite);
+            });
+
+            if (!isWhitelisted) {
+                console.log('ZenBlock: Redirecting barred site:', currentUrl);
+                window.location.href = chrome.runtime.getURL('blocked.html');
+            } else {
+                console.log('ZenBlock: Site is whitelisted, allowing access:', currentUrl);
+            }
         }
     });
 }

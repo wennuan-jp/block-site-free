@@ -2,133 +2,93 @@
 
 // Initialize storage on installation
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(['blockedPatterns'], (result) => {
+  chrome.storage.local.get(['blockedPatterns', 'whiteList'], (result) => {
     if (!result.blockedPatterns) {
       chrome.storage.local.set({ blockedPatterns: [] });
-    } else {
-      // Migrate existing patterns to base domains
-      const patterns = result.blockedPatterns;
-      const normalized = [...new Set(patterns.map(p => {
-        const parts = p.split('.');
-        return parts.length > 2 ? parts.slice(-2).join('.') : p;
-      }))];
-      
-      if (JSON.stringify(normalized) !== JSON.stringify(patterns)) {
-        chrome.storage.local.set({ blockedPatterns: normalized });
-        console.log('Migrated patterns to base domains:', normalized);
+    }
+    if (!result.whiteList) {
+      chrome.storage.local.set({ whiteList: [] });
+    }
+
+    // Normalize existing patterns and whitelist on install/update
+    const updates = {};
+    if (result.blockedPatterns) {
+      const normalizedBlocked = [...new Set(result.blockedPatterns.map(p => normalizePattern(p)))];
+      if (JSON.stringify(normalizedBlocked) !== JSON.stringify(result.blockedPatterns)) {
+        updates.blockedPatterns = normalizedBlocked;
       }
+    }
+    if (result.whiteList) {
+      const normalizedWhite = [...new Set(result.whiteList.map(p => normalizePattern(p)))];
+      if (JSON.stringify(normalizedWhite) !== JSON.stringify(result.whiteList)) {
+        updates.whiteList = normalizedWhite;
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      chrome.storage.local.set(updates);
+      console.log('Migrated storage patterns:', updates);
     }
   });
 });
 
-// Watch for changes in blockedPatterns to update declarativeNetRequest rules
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'local' && changes.blockedPatterns) {
-    updateBlockingRules(changes.blockedPatterns.newValue);
-  }
-});
 
-// Queue for rule updates to avoid race conditions
-let isUpdatingRules = false;
-let pendingRulesUpdate = null;
 
 /**
- * Updates the declarativeNetRequest rules based on the provided patterns.
- * @param {string[]} patterns 
+ * Normalizes a URL/pattern by removing protocol, query parameters, fragments, and trailing slashes.
+ * @param {string} url 
+ * @returns {string}
  */
-async function updateBlockingRules(patterns) {
-  if (isUpdatingRules) {
-    // If already updating, store the latest patterns to update again after
-    pendingRulesUpdate = patterns;
-    return;
-  }
-
-  isUpdatingRules = true;
-  try {
-    // Get all existing dynamic rules
-    const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
-    const oldRuleIds = oldRules.map(rule => rule.id);
-
-    // Create new rules, normalizing to base domains to ensure wider coverage 
-    // (e.g., douban.com instead of m.douban.com)
-    const uniqueNormalizedPatterns = [...new Set(patterns.map(p => {
-      const parts = p.split('.');
-      return parts.length > 2 ? parts.slice(-2).join('.') : p;
-    }))];
-
-    const newRules = uniqueNormalizedPatterns.map((pattern, index) => {
-      return {
-        id: index + 1, // IDs must be >= 1
-        priority: 999, // High priority to ensure it blocks
-        action: {
-          type: 'redirect',
-          redirect: { extensionPath: '/blocked.html' }
-        },
-        condition: {
-          urlFilter: `*${pattern}*`, // Explicit substring match
-          resourceTypes: ['main_frame']
-        }
-      };
-    });
-
-    // Update rules: remove all old and add all new
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: oldRuleIds,
-      addRules: newRules
-    });
-    
-    console.log('Blocking rules updated:', newRules);
-  } finally {
-    isUpdatingRules = false;
-    if (pendingRulesUpdate) {
-      const nextPatterns = pendingRulesUpdate;
-      pendingRulesUpdate = null;
-      await updateBlockingRules(nextPatterns);
-    }
-  }
+export function normalizePattern(url) {
+  if (!url) return '';
+  // Remove protocol
+  let normalized = url.replace(/^(http|https):\/\//, '');
+  // Remove query parameters and fragments
+  normalized = normalized.split(/[?#]/)[0];
+  // Remove trailing slashes
+  normalized = normalized.replace(/\/+$/, '');
+  return normalized;
 }
 
-// Ensure rules are up to date on startup
-chrome.runtime.onStartup.addListener(async () => {
-  const result = await chrome.storage.local.get(['blockedPatterns']);
-  if (result.blockedPatterns) {
-    await updateBlockingRules(result.blockedPatterns);
+
+// Watch for changes (optional for logging/debugging)
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'local') {
+    console.log('Storage changed:', changes);
   }
 });
 
-// Listen for messages from popup to ensure sequence: Update Rules -> Reload Tab
+// Ensure basic initialization on startup
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('ZenBlock background worker started.');
+});
+
+// Listen for messages from popup to reload tab after blocking
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'ADD_BLOCK_AND_RELOAD') {
     const { host, tabId } = message;
-    
-    // Execute async logic
+
     (async () => {
       try {
         const result = await chrome.storage.local.get(['blockedPatterns']);
         const patterns = result.blockedPatterns || [];
-        
-        let updatedPatterns = patterns;
+
         if (!patterns.includes(host)) {
-          updatedPatterns = [...patterns, host];
-          // 1. Save to storage FIRST
+          const updatedPatterns = [...patterns, host];
           await chrome.storage.local.set({ blockedPatterns: updatedPatterns });
         }
-        
-        // 2. Explicitly update blocking rules and WAIT for completion
-        // Even if already blocked, we update/verify rules to be safe
-        await updateBlockingRules(updatedPatterns);
-        
-        // 3. Small delay to ensure browser engine propagates the new rule
+
+        // Small delay to ensure storage propagates
         await new Promise(resolve => setTimeout(resolve, 150));
-        
-        // 4. Reload the tab
+
+        // Reload the tab
         if (tabId) {
           await chrome.tabs.reload(tabId);
         }
-        
+
         sendResponse({ success: true });
       } catch (error) {
-        console.error('Blocking failed:', error);
+        console.error('Reload failed:', error);
         sendResponse({ success: false, error: error.toString() });
       }
     })();
