@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenBlock</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --accent: #3b82f6;
+            --border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            width: 320px;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .site-info {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .url-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .url-value {
+            font-size: 0.95rem;
+            font-family: monospace;
+            word-break: break-all;
+            color: var(--accent);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.8rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+        }
+
+        #blockBtn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        #blockBtn:hover {
+            filter: brightness(1.1);
+        }
+
+        #cancelBtn {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        #cancelBtn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Block this site?</h2>
+        <div class="site-info">
+            <div class="url-label">Current Domain</div>
+            <div id="currentUrl" class="url-value">Detecting...</div>
+        </div>
+        <div class="actions">
+            <button id="cancelBtn">Cancel</button>
+            <button id="blockBtn">Confirm Block</button>
+        </div>
+        <footer>ZenBlock &middot; Minimalist Focus</footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
