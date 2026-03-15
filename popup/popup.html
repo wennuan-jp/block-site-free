@@ -85,6 +85,25 @@
             filter: brightness(1.1);
         }
 
+        #whitelistBtn {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 400;
+            text-decoration: underline;
+            margin-top: 0.3rem;
+            padding: 0.2rem;
+            flex: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #whitelistBtn:hover {
+            color: white;
+            opacity: 0.8;
+        }
+
         #cancelBtn {
             background: transparent;
             color: var(--text-secondary);
@@ -117,6 +136,7 @@
             <button id="cancelBtn">Cancel</button>
             <button id="blockBtn">Confirm Block</button>
         </div>
+        <button id="whitelistBtn">Add to White List</button>
         <footer>ZenBlock &middot; Minimalist Focus</footer>
     </div>
     <script src="popup.js"></script>

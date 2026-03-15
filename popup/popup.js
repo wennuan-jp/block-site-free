@@ -4,10 +4,12 @@ const currentUrlElement = document.getElementById('currentUrl');
 const blockBtn = document.getElementById('blockBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const optionsBtn = document.getElementById('optionsBtn');
+const whitelistBtn = document.getElementById('whitelistBtn');
 
 optionsBtn.onclick = () => chrome.runtime.openOptionsPage();
 
 let currentHost = '';
+let currentFullUrl = '';
 
 // Get active tab URL and process it
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -17,22 +19,35 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             // Extract base domain (e.g., douban.com instead of m.douban.com)
             const parts = url.hostname.split('.');
             currentHost = parts.length > 2 ? parts.slice(-2).join('.') : url.hostname;
-            
+
+            // Normalize current full URL for whitelist check (domain + path)
+            currentFullUrl = url.hostname + url.pathname.replace(/\/+$/, '');
+
             currentUrlElement.textContent = currentHost;
-            
-            // Check if already blocked
-            chrome.storage.local.get(['blockedPatterns'], (result) => {
+
+            // Check if already blocked or whitelisted
+            chrome.storage.local.get(['blockedPatterns', 'whiteList'], (result) => {
                 const patterns = result.blockedPatterns || [];
+                const whiteList = result.whiteList || [];
+
                 if (patterns.includes(currentHost)) {
                     currentUrlElement.textContent = `${currentHost} (Blocked)`;
                     blockBtn.disabled = true;
                     blockBtn.style.opacity = '0.5';
                     blockBtn.textContent = 'Blocked';
                 }
+
+                if (whiteList.includes(currentFullUrl)) {
+                    whitelistBtn.disabled = true;
+                    whitelistBtn.style.opacity = '0.5';
+                    whitelistBtn.textContent = 'Whitelisted';
+                    whitelistBtn.style.textDecoration = 'none';
+                }
             });
         } catch (e) {
             currentUrlElement.textContent = 'Invalid URL';
             blockBtn.disabled = true;
+            whitelistBtn.disabled = true;
         }
     }
 });
@@ -45,6 +60,7 @@ blockBtn.addEventListener('click', () => {
     blockBtn.textContent = 'Blocking...';
     blockBtn.disabled = true;
     cancelBtn.disabled = true;
+    whitelistBtn.disabled = true;
     blockBtn.style.opacity = '0.7';
     cancelBtn.style.opacity = '0.5';
 
@@ -67,8 +83,21 @@ blockBtn.addEventListener('click', () => {
             blockBtn.textContent = originalText;
             blockBtn.disabled = false;
             cancelBtn.disabled = false;
+            whitelistBtn.disabled = false;
             blockBtn.style.opacity = '1';
             cancelBtn.style.opacity = '1';
+        }
+    });
+});
+
+whitelistBtn.addEventListener('click', () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0] && tabs[0].url) {
+            chrome.runtime.sendMessage({
+                type: 'ADD_TO_WHITELIST',
+                url: tabs[0].url
+            });
+            window.close();
         }
     });
 });

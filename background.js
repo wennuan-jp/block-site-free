@@ -39,7 +39,7 @@ chrome.runtime.onInstalled.addListener(() => {
  * @param {string} url 
  * @returns {string}
  */
-export function normalizePattern(url) {
+function normalizePattern(url) {
   if (!url) return '';
   // Remove protocol
   let normalized = url.replace(/^(http|https):\/\//, '');
@@ -63,7 +63,7 @@ chrome.runtime.onStartup.addListener(async () => {
   console.log('ZenBlock background worker started.');
 });
 
-// Listen for messages from popup to reload tab after blocking
+// Listen for messages from popup to reload tab after blocking or whitelisting
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'ADD_BLOCK_AND_RELOAD') {
     const { host, tabId } = message;
@@ -88,7 +88,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         sendResponse({ success: true });
       } catch (error) {
-        console.error('Reload failed:', error);
+        console.error('Block reload failed:', error);
+        sendResponse({ success: false, error: error.toString() });
+      }
+    })();
+
+    return true; // Keep message channel open
+  }
+
+  if (message.type === 'ADD_TO_WHITELIST') {
+    const { url } = message;
+    const normalized = normalizePattern(url);
+
+    (async () => {
+      try {
+        const result = await chrome.storage.local.get(['whiteList']);
+        const whiteList = result.whiteList || [];
+
+        if (!whiteList.includes(normalized)) {
+          const updatedWhiteList = [...whiteList, normalized];
+          await chrome.storage.local.set({ whiteList: updatedWhiteList });
+        }
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('Whitelist update failed:', error);
         sendResponse({ success: false, error: error.toString() });
       }
     })();
