@@ -18,9 +18,24 @@ addBtn.addEventListener('click', () => {
     if (!pattern) return;
 
     chrome.storage.local.get(['blockedPatterns'], (result) => {
-        const patterns = result.blockedPatterns || [];
-        if (!patterns.includes(pattern)) {
-            const updatedPatterns = [...patterns, pattern];
+        let patterns = result.blockedPatterns || [];
+        
+        // Normalize the pattern: strip subdomains (e.g., m.douban.com -> douban.com)
+        // This handles cases where user pastes a full domain with subdomains
+        let normalizedPattern = pattern;
+        try {
+            // Check if it's a URL first
+            const url = new URL(pattern.startsWith('http') ? pattern : 'https://' + pattern);
+            const parts = url.hostname.split('.');
+            normalizedPattern = parts.length > 2 ? parts.slice(-2).join('.') : url.hostname;
+        } catch (e) {
+            // fallback for simple strings if URL parsing fails
+            const parts = pattern.split('.');
+            if (parts.length > 2) normalizedPattern = parts.slice(-2).join('.');
+        }
+
+        if (!patterns.includes(normalizedPattern)) {
+            const updatedPatterns = [...patterns, normalizedPattern];
             chrome.storage.local.set({ blockedPatterns: updatedPatterns }, () => {
                 patternInput.value = '';
                 renderList(updatedPatterns);

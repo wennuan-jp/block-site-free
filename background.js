@@ -5,6 +5,18 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.get(['blockedPatterns'], (result) => {
     if (!result.blockedPatterns) {
       chrome.storage.local.set({ blockedPatterns: [] });
+    } else {
+      // Migrate existing patterns to base domains
+      const patterns = result.blockedPatterns;
+      const normalized = [...new Set(patterns.map(p => {
+        const parts = p.split('.');
+        return parts.length > 2 ? parts.slice(-2).join('.') : p;
+      }))];
+      
+      if (JSON.stringify(normalized) !== JSON.stringify(patterns)) {
+        chrome.storage.local.set({ blockedPatterns: normalized });
+        console.log('Migrated patterns to base domains:', normalized);
+      }
     }
   });
 });
@@ -37,8 +49,14 @@ async function updateBlockingRules(patterns) {
     const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
     const oldRuleIds = oldRules.map(rule => rule.id);
 
-    // Create new rules
-    const newRules = patterns.map((pattern, index) => {
+    // Create new rules, normalizing to base domains to ensure wider coverage 
+    // (e.g., douban.com instead of m.douban.com)
+    const uniqueNormalizedPatterns = [...new Set(patterns.map(p => {
+      const parts = p.split('.');
+      return parts.length > 2 ? parts.slice(-2).join('.') : p;
+    }))];
+
+    const newRules = uniqueNormalizedPatterns.map((pattern, index) => {
       return {
         id: index + 1, // IDs must be >= 1
         priority: 999, // High priority to ensure it blocks
@@ -47,7 +65,7 @@ async function updateBlockingRules(patterns) {
           redirect: { extensionPath: '/blocked.html' }
         },
         condition: {
-          urlFilter: pattern, // Substring match
+          urlFilter: `*${pattern}*`, // Explicit substring match
           resourceTypes: ['main_frame']
         }
       };

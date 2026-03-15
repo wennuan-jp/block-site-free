@@ -11,8 +11,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0] && tabs[0].url) {
         try {
             const url = new URL(tabs[0].url);
-            // We want to block the domain
-            currentHost = url.hostname.replace(/^www\./, '');
+            // Extract base domain (e.g., douban.com instead of m.douban.com)
+            const parts = url.hostname.split('.');
+            currentHost = parts.length > 2 ? parts.slice(-2).join('.') : url.hostname;
+            
             currentUrlElement.textContent = currentHost;
             
             // Check if already blocked
