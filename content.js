@@ -36,7 +36,8 @@ function checkAndBlock() {
 
             if (!isWhitelisted) {
                 console.log('ZenBlock: Redirecting barred site:', currentUrl);
-                window.location.href = chrome.runtime.getURL('blocked.html');
+                const blockedUrl = encodeURIComponent(window.location.href);
+                window.location.href = chrome.runtime.getURL('blocked.html?url=' + blockedUrl);
             } else {
                 console.log('ZenBlock: Site is whitelisted, allowing access:', currentUrl);
             }
