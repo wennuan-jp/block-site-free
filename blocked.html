@@ -122,9 +122,14 @@
             <h1>Site is Blocked</h1>
             <p>Stay Focused. Regain Control.</p>
             <div class="blocked-url" id="blockedUrl">fuck</div>
-            <button class="button" onclick="window.history.back()">
-                Go Back
-            </button>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="button" onclick="window.history.back()">
+                    Go Back
+                </button>
+                <button class="button" id="bypassBtn" style="border-color: rgba(59, 130, 246, 0.5);">
+                    5 Min Access
+                </button>
+            </div>
         </div>
         <script src="blocked.js"></script>
     </body>

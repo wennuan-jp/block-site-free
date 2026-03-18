@@ -9,6 +9,9 @@ chrome.runtime.onInstalled.addListener(() => {
     if (!result.whiteList) {
       chrome.storage.local.set({ whiteList: [] });
     }
+    if (!result.temporaryBypass) {
+      chrome.storage.local.set({ temporaryBypass: {} });
+    }
 
     // Normalize existing patterns and whitelist on install/update
     const updates = {};
@@ -118,4 +121,74 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true; // Keep message channel open
   }
+
+  if (message.type === 'START_BYPASS') {
+    const { url, intention } = message;
+    let hostname;
+    try {
+        hostname = new URL(url).hostname.toLowerCase();
+    } catch (e) {
+        hostname = url.replace(/^(http|https):\/\//, '').split('/')[0].split(/[?#]/)[0].toLowerCase();
+    }
+    
+    const endTime = Date.now() + 5 * 60 * 1000;
+
+    (async () => {
+      try {
+        const result = await chrome.storage.local.get(['temporaryBypass']);
+        const bypasses = result.temporaryBypass || {};
+        
+        bypasses[hostname] = {
+          endTime,
+          intention
+        };
+
+        await chrome.storage.local.set({ temporaryBypass: bypasses });
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('Bypass start failed:', error);
+        sendResponse({ success: false, error: error.toString() });
+      }
+    })();
+    return true;
+  }
+
+  if (message.type === 'END_BYPASS') {
+    const { hostname } = message;
+    (async () => {
+      try {
+        const result = await chrome.storage.local.get(['temporaryBypass']);
+        const bypasses = result.temporaryBypass || {};
+        if (bypasses[hostname]) {
+          delete bypasses[hostname];
+          await chrome.storage.local.set({ temporaryBypass: bypasses });
+        }
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('Bypass end failed:', error);
+        sendResponse({ success: false, error: error.toString() });
+      }
+    })();
+    return true;
+  }
+});
+
+// Periodic cleanup of bypasses (or just clean on load)
+chrome.runtime.onStartup.addListener(async () => {
+    const result = await chrome.storage.local.get(['temporaryBypass']);
+    if (result.temporaryBypass) {
+        const now = Date.now();
+        const updatedBypasses = {};
+        let changed = false;
+        for (const [url, data] of Object.entries(result.temporaryBypass)) {
+            if (data.endTime > now) {
+                updatedBypasses[url] = data;
+            } else {
+                changed = true;
+            }
+        }
+        if (changed) {
+            await chrome.storage.local.set({ temporaryBypass: updatedBypasses });
+        }
+    }
 });
