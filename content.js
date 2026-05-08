@@ -36,11 +36,38 @@ function checkAndBlock() {
         const whiteList = result.whiteList || [];
         const bypasses = result.temporaryBypass || {};
         
-        // 1. Check if current URL matches any blocked pattern
-        const isBlocked = blockedPatterns.some(pattern => {
+        // Helper to check if a pattern matches the current URL
+        const matchesPattern = (pattern) => {
             const cleanPattern = pattern.toLowerCase().trim();
-            return cleanPattern && currentUrl.includes(cleanPattern);
-        });
+            if (!cleanPattern) return false;
+
+            // Split pattern into host and path
+            let patternHost = cleanPattern;
+            let patternPath = '';
+            const slashIndex = cleanPattern.indexOf('/');
+            if (slashIndex !== -1) {
+                patternHost = cleanPattern.substring(0, slashIndex);
+                patternPath = cleanPattern.substring(slashIndex);
+            }
+
+            // 1. Check Domain Match
+            // Handle both exact match and subdomain match (e.g., google.com matches www.google.com)
+            const domainMatches = currentHostname === patternHost || currentHostname.endsWith('.' + patternHost);
+            if (!domainMatches) return false;
+
+            // 2. Check Path Match (if pattern has a path)
+            if (patternPath && patternPath !== '/') {
+                const currentPath = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+                const cleanPatternPath = patternPath.replace(/\/+$/, '');
+                // Match exact path or sub-paths
+                return currentPath === cleanPatternPath || currentPath.startsWith(cleanPatternPath + '/');
+            }
+
+            return true;
+        };
+
+        // 1. Check if current URL matches any blocked pattern
+        const isBlocked = blockedPatterns.some(matchesPattern);
         
         if (isBlocked) {
             // Check for bypass (BY DOMAIN)
@@ -65,11 +92,8 @@ function checkAndBlock() {
                 return;
             }
 
-            // 2. Check if the normalized URL is in the white list
-            const isWhitelisted = whiteList.some(whiteItem => {
-                const cleanWhite = normalizePattern(whiteItem.toLowerCase().trim());
-                return cleanWhite && currentUrlNormalized.includes(cleanWhite);
-            });
+            // 2. Check if the URL is in the white list
+            const isWhitelisted = whiteList.some(matchesPattern);
 
             if (!isWhitelisted) {
                 console.log('ZenBlock: Redirecting barred site:', currentUrl);
