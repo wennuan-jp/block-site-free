@@ -45,7 +45,8 @@ chrome.runtime.onInstalled.addListener(() => {
       updates.lmStudioConfig = {
         baseUrl: result.lmStudioConfig.baseUrl || result.lmStudioConfig.endpoint?.replace(/\/v1$/, '') || DEFAULT_BASE_URL,
         modelName: result.lmStudioConfig.modelName ?? (result.lmStudioConfig.model || ''),
-        systemPrompt: result.lmStudioConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT
+        systemPrompt: result.lmStudioConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+        token: result.lmStudioConfig.token || ''
       };
     }
 

@@ -48,7 +48,8 @@ const whiteCount = document.getElementById('whiteCount');
 let activeConfig = {
     baseUrl: DEFAULT_BASE_URL,
     modelName: '',
-    systemPrompt: DEFAULT_SYSTEM_PROMPT
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    token: ''
 };
 
 let cachedModels = [];
@@ -82,12 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
             activeConfig = {
                 baseUrl: result.lmStudioConfig.baseUrl || result.lmStudioConfig.endpoint?.replace(/\/v1$/, '') || DEFAULT_BASE_URL,
                 modelName: result.lmStudioConfig.modelName ?? (result.lmStudioConfig.model || ''),
-                systemPrompt: result.lmStudioConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT
+                systemPrompt: result.lmStudioConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+                token: result.lmStudioConfig.token || ''
             };
         }
 
         lmBaseUrlInput.value = activeConfig.baseUrl;
         lmPromptInput.value = activeConfig.systemPrompt;
+        lmTokenInput.value = activeConfig.token || '';
         updateRequestPathsPreview();
 
         // Load Pattern Lists
@@ -227,11 +230,13 @@ saveLmBtn.addEventListener('click', () => {
         chosenModel = customModelInput.value.trim();
     }
     const systemPrompt = lmPromptInput.value.trim() || DEFAULT_SYSTEM_PROMPT;
+    const token = lmTokenInput.value.trim(); // capture token input
 
     activeConfig = {
         baseUrl,
         modelName: chosenModel,
-        systemPrompt
+        systemPrompt,
+        token // store token (may be empty string)
     };
 
     chrome.storage.local.set({ lmStudioConfig: activeConfig }, () => {
