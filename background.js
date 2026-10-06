@@ -17,7 +17,8 @@ Respond ONLY with a valid JSON object matching this schema:
 const DEFAULT_LM_STUDIO_CONFIG = {
   baseUrl: DEFAULT_BASE_URL,
   modelName: '',
-  systemPrompt: DEFAULT_SYSTEM_PROMPT
+  systemPrompt: DEFAULT_SYSTEM_PROMPT,
+  token: ''
 };
 
 // Initialize storage on installation
@@ -210,9 +211,14 @@ async function fetchLmStudioModels(baseUrl) {
 
   // 1. Try LM Studio native endpoint /api/v1/models (gives richest info including loaded instances)
   try {
+    const storedConfig = await chrome.storage.local.get(['lmStudioConfig']);
+    const token = storedConfig.lmStudioConfig?.token;
     const res = await fetch(`${cleanUrl}/api/v1/models`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       signal: AbortSignal.timeout(4000)
     });
     if (res.ok) {
@@ -368,7 +374,8 @@ async function judgeIntentionWithLMStudio(url, intention) {
     const response = await fetch(chatEndpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(config.token ? { 'Authorization': `Bearer ${config.token}` } : {})
       },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(20000)

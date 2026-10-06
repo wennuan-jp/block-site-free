@@ -18,7 +18,7 @@ Respond ONLY with a valid JSON object matching this schema:
 const lmBaseUrlInput = document.getElementById('lmBaseUrlInput');
 const chatPathPreview = document.getElementById('chatPathPreview');
 const modelsPathPreview = document.getElementById('modelsPathPreview');
-const lmModelSelect = document.getElementById('lmModelSelect');
+const lmTokenInput = document.getElementById('lmTokenInput');
 const refreshModelsBtn = document.getElementById('refreshModelsBtn');
 const customModelWrapper = document.getElementById('customModelWrapper');
 const customModelInput = document.getElementById('customModelInput');
