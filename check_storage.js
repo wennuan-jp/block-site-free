@@ -6,7 +6,7 @@ const path = require('path');
 // But we can check if there are any patterns in the blocked list that might be blocking Google Podcasts
 
 console.log('Checking if Google Podcasts might be blocked by this extension...');
-console.log('Extension name: ZenBlock: Minimalist Site Blocker');
+console.log('Extension name: with Intent');
 console.log('Purpose: Block distracting websites');
 
 // Check the content.js file for blocking logic

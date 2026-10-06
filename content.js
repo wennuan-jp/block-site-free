@@ -31,8 +31,9 @@ function checkAndBlock() {
     const currentUrlNormalized = normalizePattern(currentUrl);
     const currentHostname = getHostname(currentUrl);
     
-    chrome.storage.local.get(['blockedPatterns', 'whiteList', 'temporaryBypass'], (result) => {
+    chrome.storage.local.get(['blockedPatterns', 'forbiddenPatterns', 'whiteList', 'temporaryBypass'], (result) => {
         const blockedPatterns = result.blockedPatterns || [];
+        const forbiddenPatterns = result.forbiddenPatterns || [];
         const whiteList = result.whiteList || [];
         const bypasses = result.temporaryBypass || {};
         
@@ -66,7 +67,16 @@ function checkAndBlock() {
             return true;
         };
 
-        // 1. Check if current URL matches any blocked pattern
+        // 1. Check if URL matches any FORBIDDEN pattern (Never accessible, zero bypass)
+        const isForbidden = forbiddenPatterns.some(matchesPattern);
+        if (isForbidden) {
+            console.log('ZenBlock: Redirecting forbidden site:', currentUrl);
+            const blockedUrl = encodeURIComponent(window.location.href);
+            window.location.href = chrome.runtime.getURL('blocked.html?url=' + blockedUrl + '&level=forbidden');
+            return;
+        }
+
+        // 2. Check if current URL matches any BLOCKED pattern (AI review required for bypass)
         const isBlocked = blockedPatterns.some(matchesPattern);
         
         if (isBlocked) {
@@ -92,13 +102,13 @@ function checkAndBlock() {
                 return;
             }
 
-            // 2. Check if the URL is in the white list
+            // 3. Check if the URL is in the white list
             const isWhitelisted = whiteList.some(matchesPattern);
 
             if (!isWhitelisted) {
-                console.log('ZenBlock: Redirecting barred site:', currentUrl);
+                console.log('ZenBlock: Redirecting blocked site:', currentUrl);
                 const blockedUrl = encodeURIComponent(window.location.href);
-                window.location.href = chrome.runtime.getURL('blocked.html?url=' + blockedUrl);
+                window.location.href = chrome.runtime.getURL('blocked.html?url=' + blockedUrl + '&level=blocked');
             } else {
                 console.log('ZenBlock: Site is whitelisted, allowing access:', currentUrl);
             }

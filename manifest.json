@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ZenBlock: Minimalist Site Blocker",
+  "name": "with Intent",
   "version": "1.0",
   "description": "Block distracting websites with a premium, minimalist experience.",
   "permissions": [
@@ -8,8 +8,11 @@
     "tabs"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
+  "incognito": "spanning",
   "background": {
     "service_worker": "background.js"
   },
@@ -18,7 +21,7 @@
     "open_in_tab": true
   },
   "action": {
-    "default_title": "ZenBlock",
+    "default_title": "with Intent",
     "default_popup": "popup/popup.html"
   },
   "web_accessible_resources": [

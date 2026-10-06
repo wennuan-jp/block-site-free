@@ -9,46 +9,135 @@
 <body>
     <div class="wrapper">
         <header>
-            <div class="logo">ZenBlock</div>
-            <div class="tagline">Minimalist focus control</div>
+            <div class="logo">🛡️ ZenBlock</div>
+            <div class="tagline">Minimalist Focus &middot; AI Discipline</div>
         </header>
 
         <main>
+            <!-- LM Studio LLM Configuration Section (LibGrow Pattern) -->
+            <section class="config-section">
+                <div class="section-title-row">
+                    <h2>🤖 LM Studio Local AI</h2>
+                    <span id="lmStatusIndicator" class="status-pill status-untested">Untested</span>
+                </div>
+                <p class="section-desc">Connect to your local LM Studio instance to evaluate intention before allowing access to blocked websites.</p>
+
+                <!-- Base URL Input -->
+                <div class="form-group">
+                    <label for="lmBaseUrlInput">LM Studio Base URL</label>
+                    <input type="text" id="lmBaseUrlInput" placeholder="http://127.0.0.1:1234" spellcheck="false">
+                    <span class="hint">Standard local server host and port (default: <code>http://127.0.0.1:1234</code>)</span>
+                </div>
+
+                <!-- LM Studio Actual Request Paths (from LibGrow design) -->
+                <div class="endpoints-info-card">
+                    <div class="endpoints-title">LM Studio Actual Request Paths:</div>
+                    <div class="endpoint-row">
+                        <span class="endpoint-label">POST Chat:</span>
+                        <span id="chatPathPreview" class="endpoint-value">http://127.0.0.1:1234/v1/chat/completions</span>
+                    </div>
+                    <div class="endpoint-row">
+                        <span class="endpoint-label">GET Models:</span>
+                        <span id="modelsPathPreview" class="endpoint-value">http://127.0.0.1:1234/api/v1/models</span>
+                    </div>
+                </div>
+
+                <!-- Model Picker with Live Refresh -->
+                <div class="form-group">
+                    <div class="label-with-action">
+                        <label for="lmModelSelect">Active AI Model</label>
+                        <span id="modelLoadedBadge" class="hint" style="margin: 0; color: #34d399;"></span>
+                    </div>
+                    <div class="select-with-refresh">
+                        <select id="lmModelSelect">
+                            <option value="">Auto-detect currently loaded model</option>
+                        </select>
+                        <button type="button" id="refreshModelsBtn" class="refresh-btn" title="Fetch loaded models from LM Studio">
+                            <span class="refresh-icon">🔄</span>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                    <!-- Custom Model Name Input (shown if Custom selected or manual override needed) -->
+                    <div id="customModelWrapper" style="display: none; margin-top: 0.5rem;">
+                        <input type="text" id="customModelInput" placeholder="Enter custom model identifier" spellcheck="false">
+                    </div>
+                    <span class="hint">Select a loaded model or let ZenBlock auto-detect whichever LLM is currently active in LM Studio.</span>
+                </div>
+
+                <!-- System Prompt -->
+                <div class="form-group">
+                    <div class="label-with-action">
+                        <label for="lmPromptInput">Evaluation System Prompt</label>
+                        <button type="button" id="resetPromptBtn" class="link-btn">Reset Default</button>
+                    </div>
+                    <textarea id="lmPromptInput" rows="5" spellcheck="false"></textarea>
+                    <span class="hint">Criteria used to determine whether the user's intention is legitimate. Must return JSON with <code>valid</code> and <code>reason</code>.</span>
+                </div>
+
+                <div id="testResultBox" class="test-result-box" style="display: none;"></div>
+
+                <div class="btn-row">
+                    <button type="button" id="testLmBtn" class="btn-secondary">Test Connection</button>
+                    <button type="button" id="saveLmBtn" class="btn-primary">Save AI Settings</button>
+                </div>
+            </section>
+
+            <!-- Block New Site Section -->
             <section class="pattern-input">
                 <h2>Block New Site</h2>
                 <div class="input-group">
-                    <input type="text" id="patternInput" placeholder="e.g. baidu.com" spellcheck="false">
+                    <input type="text" id="patternInput" placeholder="e.g. reddit.com or youtube.com" spellcheck="false">
+                    <select id="levelSelect" class="level-dropdown">
+                        <option value="blocked">AI Review (Can bypass)</option>
+                        <option value="forbidden">Forbidden (No bypass)</option>
+                    </select>
                     <button id="addBtn">Add</button>
                 </div>
-                <p class="hint">Enter a domain or keyword to block (e.g., <code>baidu.com</code>)</p>
+                <p class="hint">
+                    <strong>AI Review</strong>: Temporary 5-min access allowed if local AI evaluates intention as valid.<br>
+                    <strong>Forbidden</strong>: Site is strictly unavailable at all times with zero bypass allowed.
+                </p>
             </section>
 
+            <!-- AI Review Blocked Patterns List -->
             <section class="pattern-list">
-                <h2>Blocked Patterns</h2>
-                <ul id="blockedList">
-                    <!-- Patterns will be injected here -->
-                </ul>
+                <div class="section-title-row">
+                    <h2>Blocked Sites (AI Review Required)</h2>
+                    <span class="count-badge" id="blockedCount">0</span>
+                </div>
+                <ul id="blockedList"></ul>
             </section>
 
+            <!-- Forbidden Patterns List -->
+            <section class="pattern-list forbidden-section">
+                <div class="section-title-row">
+                    <h2 style="color: #f87171;">Strictly Forbidden Sites (Zero Bypass)</h2>
+                    <span class="count-badge badge-danger" id="forbiddenCount">0</span>
+                </div>
+                <ul id="forbiddenList"></ul>
+            </section>
+
+            <!-- Manual Whitelist Section -->
             <section class="pattern-input white-list-input">
                 <h2>Manual White List</h2>
                 <div class="input-group">
-                    <input type="text" id="whiteListInput" placeholder="e.g. mail.baidu.com" spellcheck="false">
+                    <input type="text" id="whiteListInput" placeholder="e.g. docs.github.com" spellcheck="false">
                     <button id="addWhiteBtn">Allow</button>
                 </div>
-                <p class="hint">Enter a specific URL or subdomain to allow even if the domain is blocked.</p>
+                <p class="hint">Specific URLs or subdomains allowed even if the parent domain is blocked.</p>
             </section>
 
             <section class="pattern-list">
-                <h2>White List</h2>
-                <ul id="whiteList">
-                    <!-- Patterns will be injected here -->
-                </ul>
+                <div class="section-title-row">
+                    <h2>White List</h2>
+                    <span class="count-badge badge-success" id="whiteCount">0</span>
+                </div>
+                <ul id="whiteList"></ul>
             </section>
         </main>
 
         <footer>
-            <p>&copy; 2026 ZenBlock. Crafted for deep work.</p>
+            <p>&copy; 2026 ZenBlock &middot; Crafted for Deep Work &amp; Ironclad Focus.</p>
         </footer>
     </div>
     <script src="options.js"></script>

@@ -6,70 +6,196 @@
     <title>ZenBlock</title>
     <style>
         :root {
-            --bg-color: #050505;
+            --bg-color: #08090d;
+            --card-bg: #11131a;
             --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-secondary: rgba(255, 255, 255, 0.55);
             --accent: #3b82f6;
-            --border: rgba(255, 255, 255, 0.1);
-            --font-main: 'Inter', -apple-system, sans-serif;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border: rgba(255, 255, 255, 0.08);
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            width: 320px;
+            width: 330px;
             background-color: var(--bg-color);
             color: var(--text-primary);
             font-family: var(--font-main);
-            margin: 0;
-            padding: 1.5rem;
+            padding: 1.25rem;
             overflow: hidden;
+            font-size: 13px;
         }
 
         .container {
             display: flex;
             flex-direction: column;
-            gap: 1.25rem;
+            gap: 1rem;
         }
 
-        h2 {
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        #optionsBtn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
             font-size: 1.1rem;
-            font-weight: 500;
-            margin: 0;
-            letter-spacing: -0.01em;
+            padding: 0.2rem;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.2s ease;
         }
 
-        .site-info {
-            background: rgba(255, 255, 255, 0.03);
+        #optionsBtn:hover {
+            color: #ffffff;
+            transform: rotate(45deg);
+        }
+
+        .site-card {
+            background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 1rem;
+            padding: 0.85rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .url-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.5rem;
+            letter-spacing: 0.08em;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+
+        .badge-none {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        .badge-blocked {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-forbidden {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-whitelist {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         .url-value {
             font-size: 0.95rem;
-            font-family: monospace;
+            font-family: ui-monospace, SFMono-Regular, monospace;
             word-break: break-all;
-            color: var(--accent);
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        /* Level Selector */
+        .section-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35rem;
+        }
+
+        .level-options {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .level-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.6rem 0.5rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .level-btn.active-blocked {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .level-btn.active-forbidden {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .level-name {
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .level-btn.active-blocked .level-name {
+            color: #60a5fa;
+        }
+
+        .level-btn.active-forbidden .level-name {
+            color: #f87171;
+        }
+
+        .level-desc {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            line-height: 1.2;
         }
 
         .actions {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
-        button {
+        button.main-btn {
             flex: 1;
-            padding: 0.8rem;
+            padding: 0.65rem;
             border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
             border: 1px solid var(--border);
@@ -81,63 +207,112 @@
             border: none;
         }
 
+        #blockBtn.btn-forbidden {
+            background-color: var(--danger);
+        }
+
         #blockBtn:hover {
             filter: brightness(1.1);
+        }
+
+        #unblockBtn {
+            background: transparent;
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        #unblockBtn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        #switchLevelBtn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+        }
+
+        #switchLevelBtn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .secondary-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.2rem;
         }
 
         #whitelistBtn {
             background: transparent;
             border: none;
-            color: var(--accent);
-            font-size: 0.85rem;
-            font-weight: 400;
-            text-decoration: underline;
-            margin-top: 0.3rem;
-            padding: 0.2rem;
-            flex: none;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            text-decoration: underline;
+            padding: 0;
+            transition: color 0.2s ease;
         }
 
         #whitelistBtn:hover {
-            color: white;
-            opacity: 0.8;
-        }
-
-        #cancelBtn {
-            background: transparent;
-            color: var(--text-secondary);
-        }
-
-        #cancelBtn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
+            color: var(--success);
         }
 
         footer {
             text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.35);
+            padding-top: 0.25rem;
+            border-top: 1px solid var(--border);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <h2 style="margin: 0;">Block this site?</h2>
-            <button id="optionsBtn" style="flex: none; background: transparent; border: none; font-size: 1.2rem; padding: 0.2rem; opacity: 0.6; cursor: pointer;">⚙️</button>
+        <header>
+            <div class="brand">
+                <span>🛡️</span>
+                <span>ZenBlock</span>
+            </div>
+            <button id="optionsBtn" title="Settings">⚙️</button>
         </header>
-        <div class="site-info">
-            <div class="url-label">Current Domain</div>
+
+        <div class="site-card">
+            <div class="site-header">
+                <span class="url-label">Current Domain</span>
+                <span id="siteStatusBadge" class="status-badge badge-none">Checking...</span>
+            </div>
             <div id="currentUrl" class="url-value">Detecting...</div>
         </div>
-        <div class="actions">
-            <button id="cancelBtn">Cancel</button>
-            <button id="blockBtn">Confirm Block</button>
+
+        <!-- Level selection (shown when site not blocked) -->
+        <div id="levelConfigSection">
+            <div class="section-label">Block Limitation Level</div>
+            <div class="level-options">
+                <div class="level-btn active-blocked" id="optBlocked" data-level="blocked">
+                    <div class="level-name">AI Review</div>
+                    <div class="level-desc">5m bypass if AI approves purpose</div>
+                </div>
+                <div class="level-btn" id="optForbidden" data-level="forbidden">
+                    <div class="level-name">Forbidden</div>
+                    <div class="level-desc">Strictly blocked, zero bypass</div>
+                </div>
+            </div>
         </div>
-        <button id="whitelistBtn">Add to White List</button>
-        <footer>ZenBlock &middot; Minimalist Focus</footer>
+
+        <div class="actions" id="defaultActions">
+            <button class="main-btn" id="blockBtn">Confirm Block</button>
+        </div>
+
+        <div class="actions" id="manageActions" style="display: none;">
+            <button class="main-btn" id="switchLevelBtn">Change Level</button>
+            <button class="main-btn" id="unblockBtn">Unblock</button>
+        </div>
+
+        <div class="secondary-actions">
+            <button id="whitelistBtn">Add to White List</button>
+            <span id="activeModelLabel" style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">LM Studio Ready</span>
+        </div>
+
+        <footer>ZenBlock &middot; Focus with AI Integrity</footer>
     </div>
     <script src="popup.js"></script>
 </body>
