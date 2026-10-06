@@ -588,6 +588,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     })();
     return true;
+    // Extend bypass end time
+    if (message.type === 'EXTEND_BYPASS') {
+      const { hostname, newEndTime } = message;
+      (async () => {
+        try {
+          const result = await chrome.storage.local.get(['temporaryBypass']);
+          const bypasses = result.temporaryBypass || {};
+          if (bypasses[hostname]) {
+            bypasses[hostname].endTime = newEndTime;
+            await chrome.storage.local.set({ temporaryBypass: bypasses });
+          }
+          sendResponse({ success: true });
+        } catch (error) {
+          console.error('Extend bypass failed:', error);
+          sendResponse({ success: false, error: error.toString() });
+        }
+      })();
+      return true;
+    }
   }
 
   if (message.type === 'JUDGE_INTENTION') {

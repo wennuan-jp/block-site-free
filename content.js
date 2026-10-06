@@ -139,7 +139,10 @@ function showIntentionOverlay(intention, endTime) {
         flexDirection: 'column',
         gap: '8px',
         pointerEvents: 'auto',
-        animation: 'zenFadeIn 0.5s ease-out'
+        animation: 'zenFadeIn 0.5s ease-out',
+        maxWidth: '300px',
+        maxHeight: '200px',
+        overflowY: 'auto'
     });
 
     const intentionEl = document.createElement('div');
@@ -171,6 +174,7 @@ function showIntentionOverlay(intention, endTime) {
     completeBtn.onmouseout = () => {
         completeBtn.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
     };
+    // End bypass immediately
     completeBtn.onclick = () => {
         const hostname = getHostname(window.location.href);
         chrome.runtime.sendMessage({
@@ -183,9 +187,68 @@ function showIntentionOverlay(intention, endTime) {
         });
     };
 
+    // Extend Time button with AI validation
+    const extendBtn = document.createElement('button');
+    extendBtn.textContent = 'Extend Time';
+    Object.assign(extendBtn.style, {
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        color: '#22c55e',
+        border: '1px solid rgba(34, 197, 94, 0.4)',
+        borderRadius: '4px',
+        padding: '4px 8px',
+        fontSize: '11px',
+        cursor: 'pointer',
+        marginTop: '4px',
+        transition: 'all 0.2s ease',
+        textAlign: 'center'
+    });
+    extendBtn.onmouseover = () => {
+        extendBtn.style.backgroundColor = 'rgba(34, 197, 94, 0.4)';
+    };
+    extendBtn.onmouseout = () => {
+        extendBtn.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+    };
+    extendBtn.onclick = () => {
+        const newIntention = prompt('Enter reason for extending the time:');
+        if (!newIntention) return;
+        // Ask AI to judge the request validity
+        chrome.runtime.sendMessage({
+            type: 'JUDGE_INTENTION',
+            url: window.location.href,
+            intention: newIntention
+        }, (evalResult) => {
+            if (evalResult && evalResult.success && evalResult.valid) {
+                // Extend by another 5 minutes from now
+                const hostname = getHostname(window.location.href);
+                const newEnd = Date.now() + 5 * 60 * 1000;
+                chrome.runtime.sendMessage({
+                    type: 'EXTEND_BYPASS',
+                    hostname: hostname,
+                    newEndTime: newEnd
+                }, (res) => {
+                    if (res && res.success) {
+                        alert('Time extended by 5 minutes.');
+                        // Update overlay timer
+                        const timerEl = document.getElementById('zenblock-timer');
+                        if (timerEl) {
+                            // force timer update by reassigning endTime variable in closure
+                            // Since we cannot modify closure directly, reload page to reflect new bypass
+                            window.location.reload();
+                        }
+                    } else {
+                        alert('Failed to extend time: ' + (res && res.error));
+                    }
+                });
+            } else {
+                alert('AI rejected extension request: ' + (evalResult && evalResult.reason));
+            }
+        });
+    };
+
     overlay.appendChild(intentionEl);
     overlay.appendChild(timerEl);
     overlay.appendChild(completeBtn);
+    overlay.appendChild(extendBtn);
     document.documentElement.appendChild(overlay);
 
     // Style for animation
